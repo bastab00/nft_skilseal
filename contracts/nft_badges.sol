@@ -3,31 +3,65 @@ pragma solidity ^0.8.0;
 
 contract CourseCompletionBadge {
     
-    uint256 private _nextTokenId;  //_nextTokenId Keeps track of the next badge ID to be minted.
+    address private _owner; // Stores the contract owner's address
+    uint256 private _nextTokenId; // Keeps track of the next badge ID to be minted
 
-    mapping(uint256 => string) private _courseNames; // _courseNames Maps badge IDs to course names.
+    struct Badge {
+        string courseName;
+        address owner;
+        uint256 issuedAt;
+        string description;
+    }
 
-    mapping(uint256 => address) private _owners; // _owners Maps badge IDs to their owners.
+    mapping(uint256 => Badge) private _badges; // Maps badge IDs to badge details
 
-    event BadgeMinted(address indexed recipient, uint256 tokenId, string courseName); //  event BadgeMinted Emitted when a new badge is minted, containing the recipient's address, badge ID, and course name.
+    event BadgeMinted(address indexed recipient, uint256 tokenId, string courseName);
+    event BadgeRevoked(uint256 tokenId);
 
-    // Mint a new badge for a specific course
-    function mintBadge(address recipient, string calldata courseName) external {
+    // Modifier to restrict access to only the contract owner
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "Not the contract owner");
+        _;
+    }
+
+    // Constructor sets the deployer as the contract owner
+    constructor() {
+        _owner = msg.sender;
+    }
+
+    // Function to transfer ownership to a new address
+    function transferOwnership(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "New owner is the zero address");
+        _owner = newOwner;
+    }
+
+    // Mint a new badge for a specific course with a description
+    function mintBadge(address recipient, string calldata courseName, string calldata description) external onlyOwner {
         uint256 tokenId = _nextTokenId++;
-        _owners[tokenId] = recipient;
-        _courseNames[tokenId] = courseName;
+        _badges[tokenId] = Badge(courseName, recipient, block.timestamp, description);
         emit BadgeMinted(recipient, tokenId, courseName);
     }
 
-    // Get the course name associated with a badge
-    function getCourseName(uint256 tokenId) external view returns (string memory) {
-        require(_owners[tokenId] != address(0), "Badge does not exist");
-        return _courseNames[tokenId];
+    // Batch minting for multiple recipients
+    function mintBadges(address[] calldata recipients, string calldata courseName, string calldata description) external onlyOwner {
+        for (uint256 i = 0; i < recipients.length; i++) {
+            uint256 tokenId = _nextTokenId++;
+            _badges[tokenId] = Badge(courseName, recipients[i], block.timestamp, description);
+            emit BadgeMinted(recipients[i], tokenId, courseName);
+        }
     }
 
-    // Get the owner of a badge
-    function ownerOf(uint256 tokenId) external view returns (address) {
-        require(_owners[tokenId] != address(0), "Badge does not exist");
-        return _owners[tokenId];
+    // Get the details of a specific badge
+    function getBadgeDetails(uint256 tokenId) external view returns (string memory courseName, address owner, uint256 issuedAt, string memory description) {
+        require(_badges[tokenId].owner != address(0), "Badge does not exist");
+        Badge memory badge = _badges[tokenId];
+        return (badge.courseName, badge.owner, badge.issuedAt, badge.description);
+    }
+
+    // Revoke a badge by deleting its data
+    function revokeBadge(uint256 tokenId) external onlyOwner {
+        require(_badges[tokenId].owner != address(0), "Badge does not exist");
+        delete _badges[tokenId];
+        emit BadgeRevoked(tokenId);
     }
 }
