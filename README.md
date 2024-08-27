@@ -30,7 +30,7 @@ End
 
 Contract Address
 
-Contract Address: Assam downtown University
+Contract Address: 0x23B35417A83C9eb497D923b538e80B25da1E1864
 
 
 Future Scope
