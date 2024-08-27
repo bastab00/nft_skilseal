@@ -1,4 +1,5 @@
 # Course Completion Badge
+![SKILL](https://github.com/user-attachments/assets/95a34001-d60d-41a0-b147-32492b2d69d5)
 
 Vision
 The Course Completion Badge smart contract aims to provide a decentralized and verifiable way to issue digital badges for course completions.
